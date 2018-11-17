@@ -1,0 +1,128 @@
+#################################################
+#                    VIM 
+#################################################
+
+# move around
+h           # cursor left
+j           # cursor down
+k           # cursor up
+l           # cursor right
+w           # next word (start)
+e           # next word (end)
+0           # beginning of current line
+G           # end of file
+(number) G  # go to line number
+gg          # start of the file
+b           # last word
+ge          # end of last word
+CTRL-O      # older position
+CTRL-I      # newer position
+CTRL-E      # scroll down (after a search)
+CTRL-Y      # scroll up (after a search)
+CTRL-F      # scroll forward (page by page)
+CTRL-B      # scroll backwards (page by page)
+
+# commands
+:w           # save file
+:w FILENAME  # save file as...
+:r FILENAME  # insert FILENAME below the cursor
+:!COMMAND    # view command execution
+:r !COMMAND  # insert result of command execution below the cursor
+:q           # quit (safe if file was changed)
+:q           # quit (forced)
+:CTRL-D      # show all commands or autocomplete with TAB
+
+# search
+:/PHRASE              # forward
+:?PHRASE              # backward
+# after search
+  n                   # next (forward)
+  N                   # next (backward)
+# search options
+:set (no)ic           # ignore capital letters
+:set (no)hls          # highlight search
+:set (no)incsearch    # search while you type
+:set (no)wrap         # long paragraphs will use one lines
+:set (no)nu           # print the line number in front of each line
+:set (no)list         # show you tabs, spaces at EOL
+
+# search and replace
+:s/old/new/           # in line (first match)
+:s/old/new/g          # g: all matches in a line
+:%s/old/new/          # %s: all lines
+:6,10s/old/new/g      # 6,10s: only lines [6,10]
+:%s/old/new/gc        # c: consult user (interactively)
+:g/profile/d          # delete all lines containing 'profile'
+:v/profile/d          # only keep lines containing 'profile'
+:g/^$/d               # remove empty lines
+:v/./d                # remove empty lines
+# interactive options (y/n/a/q/l/^E/^Y)
+  y:                  # yes
+  n:                  # no
+  a:                  # all
+  q:                  # quit
+  l:                  # last
+  ^E:                 # scroll down
+  ^Y:                 # scroll up
+
+# delete
+x   # current character
+dw  # word
+d$  # [cursor, EOL]
+dd  # line
+
+# insert
+i  # before the cursor
+a  # after the cursor
+A  # after the line
+o  # line below the cursor
+O  # linen above the cursor
+
+# undo, redo
+u       # undo last command
+U       # undo current line modifications
+CRTL+R  # redo (undo the undo's)
+
+# copy, paste
+yy  # copy line
+p   # paste below current line
+P   # paste above current line
+
+# replace, change
+r   # replace current character with another
+ce  # change until the end of a word
+cw  # change from cursor to end of a word
+c$  # change until the end of line
+R   # replace more than one character
+
+# operator   [number]   motion
+2w   # e.g. delete 2 words
+4dd  # e.g. delete 4 lines
+c2w  # e.g. change 2 words
+
+# miscellaneous
+CTRL-G  # show current filename, line, col, percentage
+%       # visualize matching parentheses
+
+# help
+:help              # show help docs
+CTRL-W CTRL-W      # switch between windows
+CTRL-W-O           # choose one window to be the only onek
+:q
+:help w, :help c_CTRL-D, :help insert-text, :help user-manual  # examples
+
+# vim features, instead of vi | steps
+:help vimrc-intro                 # learn
+:e ~/.vimrc                       # start editing your favorite options
+:r $VIMRUNTIME/vimrc_example.vim  # read the example
+:w                                # save it
+
+# awesome features
+:set modifiable       # let us made modifications
+:set nocompatible     # enables VIM, instead of VI
+:set history=50       # keep 50 commands and 50 search patterns in the history
+:set ruler            # always display the current cursor position
+:set showcmd          # display an incomplete command while you type (e.g. 3yy)
+
+
+
