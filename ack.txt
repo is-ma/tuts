@@ -1,0 +1,70 @@
+IMPORTANT NOTES ABOUT ACK:
+  - ack don't search binaries (jpg, etc.); use 'find' instead
+
+INSTALLATION:
+sudo apt-get install -y ack-grep > /dev/null 2>&1
+
+USE CASES:
+ack -i -w --js bug                                                  # Find bugs in your comments
+ack -w --type=nojs css                                              # Searches for 'css' word, excluding js files
+ack -Q aa.bb.cc.dd /path/to/access.log | ack -Q -B5 troublesome.gif # Smart search in log files
+
+AWESOME USE CASE:
+Export ACKRC on your bash profile to influence how Ack searches per directory
+
+Example 1 in Rails project:
+  # before
+  ack -f | wc -l   # 5385 results
+  export ACKRC=".ackrc"
+
+  # let's edit a file and put something there
+  vi .ackrc
+  --ignore-dir=vendor
+
+  # now
+  ack -f | wc -l   #  629 results
+
+Example 2 in Rails project:
+  # design a function to search for a version number and replace it with another
+  # ackx v3.0.5 v3.0.6
+  function ackx { ack "$1" -l --print0 | xargs -0 -n1 sed -i '' -e "s+$1+REPLACE+"; }
+
+RAILS .ackrc
+--smart-case
+--ignore-dir=public/assets
+--ignore-dir=bin
+--ignore-dir=log
+--ignore-dir=tmp
+--ignore-dir=vendor
+--type-add=frontend:ext:scss,css,js,coffee
+--ignore-file=ext:keep
+--ignore-file=ext:ico
+# External: RubyMine, ...
+--ignore-dir=.idea
+
+COMPREHENSIVE, USEFUL OPTIONS:
+ack -i PATTERN                                                      # Ignore case
+ack --smart-case Pattern                                            # Case sensitive if pattern has an upper case
+ack -w cache                                                        # Match only whole words
+ack -Q '$HOME'                                                      # PATTERN is literal
+ack -l controller                                                   # Filenames containing matches
+ack -l db/                                                          # You can always choose where to search: db/
+ack -L controller                                                   # Filenames with no matches
+ack 'v\d+\.\d+\.\d+' -m 3                                           # Maximum 3 lines for each file
+ack 'v\d+\.\d+\.\d+' -1                                             # Stop searching if one result is founded
+ack 'v\d+\.\d+\.\d+' -c                                             # Count number of lines matching per file (spam)
+ack 'v\d+\.\d+\.\d+' -lc                                            # Count number of lines matching on relevant files
+ack 'v\d+\.\d+\.\d+' -A 5                                           # Show 5 lines after match per file
+ack 'v\d+\.\d+\.\d+' -B 5                                           # Show 5 lines before match per file
+ack 'v\d+\.\d+\.\d+' -C                                             # Show lines (default 2) in context of match
+ack pattern --print0                                                # Print a null byte separator (-f,-g,-l,-L,-c)
+ack pattern --pager="less -R"                                       # Reader
+ack -f                                                              # Just filenames; MUST HAVE NO PATTERN
+ack -g hour                                                         # It's like: ack -f | grep hour
+ack --dump                                                          # Current settings; useful learn to ignore files/dirs
+ack -f --ignore-dir=vendor                                          # Ignore directories; repeat option if needed
+ack -f --ignore-file=ext:gemspec                                    # Ignore a file extension
+ack -f --ignore-file=is:404.html public/                            # Ignore a specific file
+ack -f --ignore-file=match:/[.]html?$/ public/                      # Ignore using a RegExp
+ack --type-add=frontend:ext:scss,css,js --type=frontend include     # Search 'rule' only on front-end files
+ack --type-add=frontend:ext:scss,css,js --type=nofrontend rule      # Search 'rule' on NON front-end files
