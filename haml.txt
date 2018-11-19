@@ -1,0 +1,292 @@
+#################################################
+#                HAML - CHEAT SHEET
+#################################################
+
+-# up and running
+gem install haml  # install
+haml input.haml output.html  # run
+haml --help  # full documentation
+gem 'haml'  # with Rails (.html.erb -> .html.haml)
+Haml::Template.options[:format] = :html5  # config/initializers/haml.rb
+
+-# plain text: basics
+%gee
+  %whiz
+    Wow this is cool!
+
+-# plain text: is possible to convert to Haml step by step
+%p
+  <div id="blah">Blah!</div>
+
+-# escaping: anything after '\' will be taken as a string
+%title
+  = @title
+  \= @title
+
+-# attributes {}: basics, newlines, interpolation
+%html{:xmlns => "http://www.w3.org/1999/xhtml", "xml:lang" => "en", :lang => "en"}
+%script{:type => "text/javascript",
+        :src  => "javascripts/script_#{2 + 7}"}
+
+-# attributes {}: with arrays on :id will be concatenated as 'any_business_12'
+- Item = Struct.new(:id, :type, :number, :urgency, :is_empty?)
+- @item = Item.new('i-1839-1313-1898-1988', 'business', '12', 'primary', false)
+%div{:id => ['any', @item.type, @item.number]}
+
+-# attributes {}: with arrays on :class will be concatenated as 'any business primary'
+%div{:class => ['any', @item.type, @item.urgency]}
+
+-# attributes {}: conditionals; 1st: 'any', 2nd: didn't show class attribute
+%div{:class => ['any', @item.type == 'admin' && [@item.type, @item.urgency]]}
+%div.item{:class => @item.is_empty? && "empty"}
+
+-# attributes (): smaller for fixed text
+%html(xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en")
+
+-# attributes (): smaller for Ruby variables without using logic
+%a(title=@title href=href) Stuff
+
+-# attributes (): but you can use both if you need to
+%a(title=@title){href: href} Using alternative Ruby +v1.9 syntax
+
+-# attributes (): or you can interpolate on a string
+%span(class="widget_#{@widget.number}")
+%script(type="text/javascript"
+        src="javascripts/script_#{2 + 7}")
+
+-# attribute methods: arguments
+:ruby
+  def html_attrs(lang = 'en-US')
+    {:xmlns => "http://www.w3.org/1999/xhtml", 'xml:lang' => lang, :lang => lang}
+  end
+%html{html_attrs('fr-fr')}
+
+-# attribute methods: overwriting (bread='whole wheat' delicious='true' filling='peanut butter and jelly')
+:ruby
+  def hash1
+    {:bread => 'white', :filling => 'peanut butter and jelly'}
+  end
+  def hash2
+    {:bread => 'whole wheat'}
+  end
+%sandwich{hash1, hash2, :delicious => 'true'}/
+
+-# attributes: boolean; 1st: <input selected>, 2nd: <input>
+%input{:selected => true}
+%input{:selected => false}
+
+-# attributes: boolean; alternative ways to write them)
+%input(selected=true)
+
+-# attributes: written as plain text
+%input(selected)
+%input{id: 'scales', type: 'checkbox', name: 'scales'}(checked)
+
+-# attributes: prefixed, useful; 1st adds: data-author_id='123' data-category='7'
+%a{:href=>"/posts", :data => {:author_id => 123, :category => 7}} Posts By Author
+%p.book-info{:data => {:book => {:id => 123, :genre => 'programming'}, :category => 7}}
+
+-# class => '.'; ID => '#'
+%div#content
+  %div.articles
+    %div.article.title Doogie Howser Comes Out
+    %div.article.date 2006-11-05
+    %div.article.entry
+      Neil Patrick Harris would like to dispel any rumors that he is straight.
+
+%div#things
+  %h1.two.three#one La La La
+  %span#rice Chicken Fried
+  %p.beans{ :food => 'true' } The magical fruit
+
+-# in combination; <div class='entry item primary' id='content_12'></div>
+%div#content.item.entry{:id => @item.number, :class => @item.urgency}
+
+-# implicit div
+#collection
+  .item
+    .description What a cool item!
+
+-# empty tags, by default: meta, img, link, br, hr, input, area, param, col, base
+%br/
+%meta{'http-equiv' => 'Content-Type', :content => 'text/html'}/
+
+-# doctype when :format is set to :html5... <!DOCTYPE html>
+!!!
+
+-# html comments: <!-- This is a comment -->
+/ This is a comment
+
+-# conditional comments: <!--[if IE]> ... <![endif]-->
+/[if IE]
+  %a{ :href => 'http://www.mozilla.com/en-US/firefox/' }
+    %h1 Get Firefox
+
+-# downlevel-revealed comments: <!--[if !IE]><!-->...<!--<![endif]-->
+-# IMPORTANT: (works on 5.0.4 <VM>, not on v4.0.7 <old CodeKit 2.7.1>)
+/![if !IE]
+  You are not using Internet Explorer, or are using version 10+.
+
+-# haml comment (like this one) or even multiline
+-# IMPORTANT: (works on 5.0.4 <VM>, not on v4.0.7 <old CodeKit 2.7.1>)
+-#
+  This won't be displayed
+    Nor will this
+                   Nor will this.
+
+-# Ruby evaluation; set :escape_html to prevent evil string evaluation
+%p
+  = ['hi', 'there', 'reader!'].join " "
+  = "yo"
+
+%p= "hello"
+
+= '<script>alert("I\'m evil!");</script>'
+
+= link_to_remote "Add to cart",
+    :url => { :action => "add", :id => product.id },
+    :update => { :success => "cart", :failure => "error" }
+
+- links = {:home => "/",
+    :docs => "/docs",
+    :about => "/about"}
+#content
+- links.each do |key,link|
+  %a{:href => link}
+    = key.to_s.capitalize
+
+-# Ruby blocks, don't write 'end'; 1st is from https://stackoverflow.com/a/16430415
+= form_for :list, :url => {:controller => 'lists', :action => 'create'} do |f|
+  = label_tag :list_name, "Title", :class => 'header_label'
+
+- (42...47).each do |i|  # no more 'end' tag
+  %p= i
+
+- list = {:title => 'All the stuff', :description => 'A book about all the stuff.'}
+%ul
+  - list.each do |key, val|
+    %li
+      %h3= key.capitalize
+      %p= val
+
+-# Ruby interpolation within plain text: #{}
+- type = 'nuts'
+%p This is a great <strong>#{type}</strong>.
+
+%p
+  - case 2
+  - when 1
+    = "number one"
+  - when 2
+    = "number two"     # compiled as: <p>\n  number two\n<p>\n
+  - when 3
+    = "number three"
+
+-# force inserting '&#x000A;' to show newlines on HTML for hardcoded tags.
+-# IMPORTANT: Dynamically-generated textareaS and preS can’t be preserved
+-# .. automatically, use find_and_preserve (~) or :preserve filter
+%p~ "<textarea>Foo\nBar</textarea>"
+
+- type = 'nuts'
+:preserve
+  El ID utilizado es...
+  #{type}.
+
+-# long Ruby method chain code can be splitted: <p>---p_r_i_m_a_r_y----</p>
+%p= @item.urgency.        |
+    split("").join('_').  |
+    center(20, '-')       |
+
+-# Ruby interpolation with plain text: #{}, or escape it with '\'
+A plain text string with a variable on it; id: #{@item.id}.
+
+- if true
+  %p
+    This is a great <strong>#{@item.type}</strong>.
+
+:javascript
+  $(document).ready(function() {
+    alert(#{@item.id});
+  });
+
+-# force sanitize html with & (interpolation), &= (in default mode '=' don't sanitize, check :escape_html)
+& I like #{"cheese & crackers"}
+&= "I feel & <strong>!"
+
+-# never sanitize html with ! (interpolation), != (in default mode '=' works like '!=')
+! I like #{"cheese & crackers"}
+!= "I feel & <strong>!"
+
+-# filter :escaped (works like '&='; the next results are identical):
+&= "Televisión & <b>radio</b> title: #{@title}."
+:escaped
+  Televisión & <b>radio</b> title: #{@title}.
+
+-# more filters (NOTE: :textile, :markdown, :css requires dependencies)
+:ruby
+  text = "hola"
+El texto es: #{text}.
+
+:erb
+  <p class='principal'>
+    El ID utilizado es <%= @item.id %>.
+  </p>
+
+:plain
+  <p class='principal'>
+    El ID utilizado es <%= @item.id %>.
+  </p>
+
+:escaped
+  <p class='principal'>
+    El ID utilizado es <%= @item.id %>.
+  </p>
+
+:javascript
+  $(document).ready(function() {
+    alert(#{@item.id});
+  });
+
+-# the helpers surround, precede and succeed have a very noisy syntax (not here)
+
+-# long Ruby lines
+:ruby
+  def link_to(anchor, href)
+    "<a href='#{href}'>#{anchor}</a>"
+  end
+%whoo
+  %hoo= link_to(                 |
+    "I think this might get " +  |
+    "pretty long so I should " + |
+    "probably make it " +        |
+    "multiline so it doesn't " + |
+    "look awful.", "#")          |
+
+-# long Ruby lines (without crap): make your own helper! (link_to_remote)
+= link_to_remote "Add to cart",
+    :url => { :action => "add", :id => product.id },
+    :update => { :success => "cart", :failure => "error" }
+
+-# tabs helper
+%h1 foo
+- tab_up
+%p bar
+- tab_down
+%strong baz
+
+= '<div class="important">' if true  # because I can't load haml_tag_if
+- with_tabs(1) do
+  %p text
+= '</div>' if true
+
+- if true  # you could use a partial # https://stackoverflow.com/a/7240476/
+  %a{:href => url}
+    = render 'bar'
+- else
+  = render 'bar'
+
+- content_for :foobar do  # same SO answer, but seems a cleaner approach
+  .foo
+    .block
+      .of
+        .code
