@@ -1,0 +1,413 @@
+# concepts
+#   - test_unit: 
+
+# run the tests
+rails test
+rails test:models
+rails test:controllers
+rails test test/controllers                                  # by directory
+rails test test/models/mujer_test.rb
+rails test test/models/article_test.rb --name test_the_truth
+rails test -b test/models/article_test.rb                    # --backtrace, wordy when fails
+
+
+
+# ruby assertions (only two MiniTest assertions are enough)
+test "the truth" do
+  assert true
+  assert_not false
+end
+
+test "should not save article without title" do
+  article = Article.new
+  assert_not article.save, "Saved the article without a title"
+end
+
+
+
+# rails assertions (examples)
+test "should create article" do
+  assert_difference('Article.count') do
+    post articles_url, params: { article: { body: 'bodbodbod', title: 'tititi' }}
+  end
+  assert_redirected_to article_url(Article.last)
+  follow_redirect!
+  assert_select 'title', 'tititi'
+  assert @response.body.match 'bodbodbod'
+end
+
+test "should destroy article" do
+  assert_difference('Article.count', -1) do
+    delete article_url(@article)
+  end
+  assert_redirected_to articles_url
+end
+
+assert_no_difference 'Article.count' do                          # default is +1
+  post :create, params: { article: invalid_attributes }
+end
+assert_difference [ 'Article.count', 'Post.count' ], 2 do        # more than once
+  post :create, params: { article: {...} }
+end
+assert_difference ->{ Article.count }, 2 do                      # lamda
+  post :create, params: { article: {...} }
+end
+# el siguiente me podría servir para una transacción, por ejemplo
+assert_difference ->{ Article.count } => 1, ->{ Notification.count } => 2 do
+  post :create, params: { article: {...} }
+end
+assert_changes ->{ Status.all_good? } do
+  post :create, params: { status: { ok: false } }
+end
+assert_no_changes 'Status.all_good?' do
+  post :create, params: { status: { ok: true } }
+end
+assert_nothing_raised do
+  perform_service(param: 'no_exception')
+end
+assert_response                  # number, :success, :redirect, :missing, :error
+test "should show article" do
+  get article_url(@article)
+  assert_response :success
+end
+# it's like a 'assert_response: :redirect; follow_redirect!'
+assert_redirected_to             # controller: 'name'; root_path; @article
+test "should update article" do
+  patch article_url(@article), params: { article: { body: @article.body, title: @article.title } }
+  assert_redirected_to article_url(@article)
+end
+
+# both ways: options->path, path->options
+assert_routing '/home', controller: 'home', action: 'index'
+assert_routing '/entries/show/23', controller: 'entries', action: 'show', id: 23
+assert_routing({ method: 'put', path: '/product/321' }, { controller: "product", action: "update", id: "321" })
+
+
+
+# fixtures
+about:
+  name: About
+
+first:
+  title: Welcome to Rails!
+  body: Hello world!
+  category: about
+
+<% 1000.times do |n| %>
+user_<%= n %>:
+  username: <%= "user#{n}" %>
+  email: <%= "user#{n}@example.com" %>
+<% end %
+
+# fixtures in tests
+david = users(:david)
+friends = users(:david, :steve)  # array
+
+
+
+# model testing (generates article_test.rb, fixtures/articles.yml)
+rails generate test_unit:model article title:string body:text
+
+
+
+# take screenshots
+  - take_screenshot
+  - take_failed_screenshot  # is included in after_teardown
+
+
+
+# system testing (example)
+rails generate system_test users
+
+# test/system/articles_test.rb
+class ArticlesTest < ApplicationSystemTestCase
+  test "viewing the index" do
+    visit articles_path
+    assert_selector "h1", text: "Articles"
+  end
+
+test "creating an article" do
+  visit articles_path
+  click_on "New Article"
+  fill_in "Title", with: "Creating an Article"
+  fill_in "Body", with: "Created this article successfully!"
+  click_on "Create Article"
+  assert_text "Creating an Article"
+end
+
+# run the system tests
+rails test:system  # rails test (by itself) won't run system tests
+
+
+
+# integration testing (test important use-cases for our application)
+
+# ActionDispatch::Integration::Runner
+- create_session
+- default_url_options
+- integration_session
+- open_session
+- reset!
+# ActionDispatch::Integration::RequestHelpers
+# methods accept up to 6 optional arguments (populates @response)
+#   1) uri | controller action | route helper
+#   2) params: a hash of request params on the URL
+#   3) headers: setting custom headers
+#   4) env: request environment
+#   5) xhr: Ajax request (if true)
+#   6) as: encoding the request (:json, ...)
+# examples:
+#   - (headers) get article_url(Article.first), headers: { "HTTP_REFERER" => "http://example.com/home" }
+#   - (headers) get articles_url, headers: { "Content-Type": "text/plain" }
+#   - (xhr) patch article_url(Article.last), params: { article: { title: "updated" } }, xhr: true
+#   - (as) formating results... as: :json
+#
+# in a typical CRUD app you'll be using get, post, put and delete more often
+- get
+- patch
+- put
+- post
+- delete
+- head
+- follow_redirect!
+# ActionDispatch::Integration::Session
+- new
+- cookies
+- host
+- https!(flag = true)  # session.https!
+- https?               # if session.https? ...
+- process              # process :get, '/author', params: { since: 201501011400 } 
+- reset!               # session.reset!
+- url_options
+
+# example 1
+rails generate integration_test blog_flows
+
+# test/integration/blog_flows_test.rb
+class BlogFlowTest < ActionDispatch::IntegrationTest
+  test "can see the welcome page" do
+    get "/"
+    assert_select "h1", "Welcome#index"
+  end
+end
+
+# example 2
+test "can create an article" do
+  get "/articles/new"
+  assert_response :success
+ 
+  post "/articles",
+    params: { article: { title: "can create", body: "article successfully." } }
+  assert_response :redirect
+  follow_redirect!
+  assert_response :success
+  assert_select "p", "can create"
+end
+
+
+
+# functional tests (controller test)
+# - was the web request successful?
+# - was the user redirected to the right page?
+# - was the user successfully authenticated?
+# - was the correct object stored in the response template?
+# - was the appropriate message displayed to the user in the view?
+
+# example
+rails generate scaffold_controller article title:string body:text
+
+# articles_controller_test.rb
+class ArticlesControllerTest < ActionDispatch::IntegrationTest
+  test "should get index" do
+    get articles_url
+    assert_response :success
+  end
+end
+
+# If you already have a controller and just want to generate the test scaffold code
+rails generate test_unit:scaffold article
+
+# example
+test "should create article" do
+  assert_difference('Article.count') do
+    post articles_url, params: { article: { body: 'Rails is awesome!', title: 'Hello Rails' } }
+  end
+ 
+  assert_redirected_to article_path(Article.last)
+end
+
+# test an AJAX request
+
+test "ajax request" do
+  article = articles(:one)
+  get article_url(article), xhr: true
+ 
+  assert_equal 'hello world', @response.body
+  assert_equal "text/javascript", @response.content_type
+end
+
+# three hashes that you could access after a request (write/read)
+flash['gordon']                 | flash[:gordon]
+session['email@example.com']    | session[:username]
+cookies['are_bad_for_u']        | cookies[:are_bad_for_u]
+
+# available instance variables in functional tests (and example)
+@controller  # the controller processing the request
+@request     # the request object
+@response    # the response object
+
+class ArticlesControllerTest < ActionDispatch::IntegrationTest
+  test "should get index" do
+    get articles_url
+ 
+    assert_equal "index", @controller.action_name
+    assert_equal "application/x-www-form-urlencoded", @request.media_type
+    assert_match "Articles", @response.body
+  end
+end
+
+# testing flash notices
+test "should create article" do
+  assert_difference('Article.count') do
+    post article_url, params: { article: { title: 'Some title' } }
+  end
+ 
+  assert_redirected_to article_path(Article.last)
+  assert_equal 'Article was successfully created.', flash[:notice]
+end
+
+# test basic blog_app
+require 'test_helper'
+
+class ArticlesControllerTest < ActionDispatch::IntegrationTest
+  # called before every single test
+  setup do
+    @article = articles(:one)
+  end
+ 
+  # called after every single test
+  teardown do
+    Rails.cache.clear
+  end
+ 
+  test "should show article" do
+    get article_url(@article)
+    assert_response :success
+  end
+ 
+  test "should destroy article" do
+    assert_difference('Article.count', -1) do
+      delete article_url(@article)
+    end
+ 
+    assert_redirected_to articles_path
+  end
+ 
+  test "should update article" do
+    patch article_url(@article), params: { article: { title: "updated" } }
+ 
+    assert_redirected_to article_path(@article)
+    @article.reload
+    assert_equal "updated", @article.title
+  end
+end
+
+# test helpers (useful to avoid code duplication)
+
+module SignInHelper       # test/test_helper.rb
+  def sign_in_as(user)
+    post sign_in_url(email: user.email, password: user.password)
+  end
+end
+class ActionDispatch::IntegrationTest
+  include SignInHelper
+end
+
+require 'test_helper'
+class ProfileControllerTest < ActionDispatch::IntegrationTest
+  test "should show profile" do
+    sign_in_as users(:david)
+    get profile_url
+    assert_response :success
+  end
+end
+
+# testing views
+
+assert_select 'ul.navigation' do
+  assert_select 'li.menu_item'
+end
+
+assert_select "div:match('id', ?)", /\d+/
+
+assert_select "a[href=?]", user_path(user)  # Rails 4
+assert_select "a:match('href', ?"), url     # Rails 5
+
+assert_select "ol" do |elements|
+ elements.each do |element|
+   assert_select element, "li", 4  # two lists, four list elements each
+ end
+end
+
+assert_select "ol" do
+  assert_select "li", 8  # one or more lists, eight list elements in total
+end
+
+assert_select('title', 'Welcome')
+
+assert_select "form input", 4  # first form element has four input fields
+
+assert_select "title", {count: 1, text: "Welcome"},
+  "Wrong title or more than one title element"
+
+assert_select "li", {maximum: 10},
+  "Too many list elements"
+
+assert_select "form", false, "This page must contain no forms"
+
+assert_select "body div.header ul.menu"  # test content and style
+
+assert_select "ol>li:match('id', ?)", /item-\d+/
+
+assert_select "form input" do  # all input fields in the form have a name
+  assert_select ":match('name', ?)", /.+/  # not empty
+end
+
+# additional view-based assertions
+
+- assert_select_email            # assertions on the body of an email
+- assert_select_encoded          # assertions on encoded HTML
+- css_select(selector)           # get an array of all elements selected by selector
+- css_select(element, selector)  # first matches +element+, then get an array of its children
+
+# testing helpers
+module UsersHelper
+  def link_to_user(user)
+    link_to "#{user.first_name} #{user.last_name}", user
+  end
+end
+
+class UsersHelperTest < ActionView::TestCase
+  include UserHelper
+  test "should return the user's full name" do
+    user = users(:david)
+    assert_dom_equal %{<a href="/user/#{user.id}"}David Heinemeir Hansson</a>}, link_to_user(user)
+  end
+end
+
+# testing emails (it seems that functional tests are enough)
+require 'test_helper'
+class UsersControllerTest < ActionDispatch::IntegrationTest
+  test "invite friend by email" do
+    assert_difference 'ActionMailer::Base.deliveries.size', +1 do
+      post invite_friend_url, params: { email: 'friend@example.com' }
+    end
+    invite_email = ActionMailer::Base.deliveries.last
+ 
+    assert_equal "You have been invited by me@example.com", invite_email.subject
+    assert_equal 'friend@example.com', invite_email.to[0]
+    assert_match(/Hi friend@example\.com/, invite_email.body.to_s)
+  end
+end
+
+
