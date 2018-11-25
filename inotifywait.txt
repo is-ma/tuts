@@ -1,0 +1,14 @@
+#################################################
+#              INOTIFYWAIT
+#################################################
+# https://linux.die.net/man/1/inotifywait
+#
+# INSTALLATION
+# sudo apt-get install -y inotify-tools
+#
+# FEATURES
+# - monitor code changes very efficiently on Linux distributions
+# - execute any shell command or script when some files change
+#
+# Example: if Rails 5 code changes, run tests (on Vagrant use mhallin/vagrant-notify-forwarder)
+while inotifywait $(ack --type-add=rails:ext:rb,erb --rails -f | tr \\n \ ); do rails test; done
