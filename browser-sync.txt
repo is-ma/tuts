@@ -1,0 +1,44 @@
+#################################################
+#              BROWSER-SYNC
+#################################################
+# https://browsersync.io/
+#
+# INSTALLATION
+brew install nvm
+
+nvm ls-remote  # available Node versions to install
+node_version=v10.13.0
+nvm install $node_version
+
+# TIPS FOR FIXING TROUBLES
+nvm ls  # list installed versions
+nvm use $node_version
+sudo ln -sf $HOME/.nvm/versions/node/$node_version/bin/node /usr/local/bin/node  # https://stackoverflow.com/a/42967056
+/usr/local/bin/node --version  # test
+
+npm install -g browser-sync
+
+# FEATURES
+# - update browsers when source code changes (HTML, CSS, images, etc.)
+# - install on Windows, MacOS and Linux
+# - slow network simulation
+# - sync interaction: scroll, click, refresh, form actions
+# - url history: push back any visited URL in one click
+
+# Example: start a server for static sites
+browser-sync start --server --files "css/*.css"
+browser-sync start --server --files . --host YOUR_IP_HERE --port 9000
+browser-sync start --server --files $(ack --type-add=web:ext:htm,html,xhtml,js,css --web -f | tr \\n \ ) --host $(ipconfig getifaddr en0) --port 9000
+
+# Example: start a server for dynamic sites
+browser-sync start --files $(ack --type-add=rails:ext:rb,erb,js,css,sass,scss,coffee --rails -f | tr \\n \ ) --proxy 192.168.33.12:3000 --host $(ipconfig getifaddr en0) --port 9000 --no-notify --no-open --reload-delay 500 --reload-debounce 2000
+
+# USEFUL OPTIONS
+--files file1.css file2.js     # multiple files to watch for changes
+--proxy 192.168.33.12:3000     # using a current web server providing an address with a port.
+--host HOST_IP_HERE            # override host detection if you know the correct IP to use.
+--port 9000                    # use a specific port (instead of the one auto-detected by Browsersync)
+--no-notify                    # don't show any notifications in the browser.
+--no-open                      # stop the browser from automatically opening
+--reload-delay 500             # wait 500 milliseconds before any browsers should try to inject/reload a file.
+--reload-debounce 2000         # wait 2000 milliseconds after a reload event before allowing more.
